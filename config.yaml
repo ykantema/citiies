@@ -1,0 +1,497 @@
+
+openapi: "3.0.0"
+info:
+  title: QWILT Delivery Reports API
+  description: An API for Delivery Reporting Analytics
+  version: 0.0.1
+
+servers:
+  - url: https://delivery-reports.qwilt.com/api/2
+
+tags:
+  - name: report
+    description: Contains all the reports
+
+components:
+  schemas:
+    TimeSeriesResponse:
+      type: object
+      properties:
+        startTime:
+          type: integer
+          format: int64
+        endTime:
+          type: integer
+          format: int64
+        intervalSize:
+          type: integer
+          format: int32
+        intervalUnit:
+          $ref: '#/components/schemas/IntervalUnit'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSeriesData'
+
+    IntervalUnit:
+      type: string
+      enum:
+        - min
+        - minute
+        - hr
+        - hour
+        - day
+        - week
+        - month
+      description: >
+        The units of the aggregation interval. Is correlated with the the intervalSize parameter
+
+        * `min` and `minute` - Allow aggregation by 5, 10, 15, 30 or 60 minutes
+
+        * `hr` and `hour` - Allow aggregation by 1, 4, 6, 12 or 24 hours
+        
+        * `day` - Allows aggregation by 1, 3 or 7 days
+        
+        * `week` - Allows aggregation by 1, 2 or 4 weeks
+        
+        * `month` - Allows aggregation by 1, 3, 4 or 12 months
+
+
+    TimeSeriesData:
+      type: object
+      properties:
+        dimensions:
+          type: object
+          additionalProperties: true
+        metrics:
+          type: object
+          properties:
+            requests:
+              type: array
+              items:
+                type: integer
+                format: int64
+            volume:
+              type: array
+              items:
+                type: integer
+                format: int64
+            unique-subscribers:
+              type: array
+              items:
+                type: integer
+                format: int64
+            bandwidth:
+              type: array
+              items:
+                type: number
+                format: double
+            bitrate:
+              type: array
+              items:
+                type: number
+                format: double
+            tps:
+              type: array
+              items:
+                type: number
+                format: double
+            cache-efficiency:
+              type: array
+              items:
+                type: number
+                format: double
+      required:
+        - metrics
+
+    ReportResponse:
+      type: object
+      properties:
+        request:
+          $ref: '#/components/schemas/Request'
+        #        parameters:
+        #          $ref: '#/components/schemas/Parameters'
+
+    Request:
+      type: object
+      properties:
+        user:
+          type: string
+        timestamp:
+          type: string
+        report:
+          type: string
+    #        userRawParameters:
+    #          $ref: '#/components/schemas/UserRawParameters'
+
+    Metrics:
+      type: string
+      enum:
+        - requests
+        - volume
+        - bandwidth
+        - bitrate
+        - tps
+        - cache-efficiency
+        - unique-subscribers
+      description: >
+        The type of metrics requested:  
+        
+        * `requests` - The number of HTTP/HTTPS requrests the CDN handled per the selected interval
+        
+        * `volume` - The amount of bytes the CDN handled per the selected interval  
+        
+        * `bandwidth` - The total number of Bits per Second consumed by the CDN per the selected interval  
+        
+        * `bitrate` - The rate of bits being served by the CDN per the selected interval
+        
+        * `tps` - The number of requests per second per the selected interval  
+        
+        * `cache-efficiency` - The ratio between cache hits and cache misses in per the selected interval
+        
+        * `unique-subscribers` - An approximation of the number of unique subscribers seen during the selected interval
+
+    GroupBy:
+      type: string
+      enum:
+        - time
+        - host
+        - trafficLayer
+        - protocol
+        - httpVersion
+        - statusCode
+        - statusCodeClass
+        - cacheStatus
+        - contentType
+        - geo
+        - isp
+        - cp
+        - serviceType
+        - trafficType
+      description: >
+        The dimension(s) by which to group data:  
+        
+        * `time` - Buckets of minuted defined by the `intervalMin` parameter
+        
+        * `host` - The delivery service to which the traffic is associated
+        
+        * `trafficLayer` - Segmentation of the traffic by the CDN layer that served them (`ingress`, `midgress`, `egress`, `qwilt`)
+        
+        * `protocol` - HTTP vs HTTPS
+        
+        * `httpVersion` - Breakdown between different HTTP versions
+        
+        * `statusCode` - Breakdown by HTTP Status code (e.g. 200, 301, 404 etc)
+        
+        * `statusCodeClass` - Breakdown by HTTP Status code class (e.g. 2xx, 3xx, 4xx etc)
+        
+        * `cacheStatus` - Breakdown by TBD
+        
+        * `contentType` - Breakdown by `Content-Type` (e.g. `application/json`)
+        
+        * `geo` - Breakdown by 2 letter ISO Country Codes (e.g. `US`, `GR` etc) 
+        
+        * `isp` - Breakdown by the ISP who served the traffic 
+        
+        * `cp` - Breakdown by Content Publisher code to which the traffic belongs 
+        
+        * `serviceType` - Breakdown by type of the delivery service (e.g. `vod`, `live` etc) 
+        
+        * `cdnService` - `open-caching` vs `transparent-caching` 
+          
+
+    TrafficLayer:
+      type: string
+      enum:
+        - ingress
+        - midgress
+        - egress
+        - qwilt
+        - all
+
+    Protocol:
+      type: string
+      enum:
+        - http
+        - https
+
+    HttpVersion:
+      type: string
+      enum:
+        - 0.9
+        - 1.0
+        - 1.1
+        - 2.0
+
+    ServiceType:
+      type: string
+      enum:
+        - live
+        - vod
+        - application
+
+    CdnService:
+      type: string
+      enum:
+        - tc
+        - isp-cdn
+
+    StatusCodeList:
+      type: array
+      items:
+        $ref: '#/components/schemas/StatusCode'
+
+    StatusCode:
+      properties:
+        value:
+          type: integer
+          minimum: 100
+          maximum: 699
+
+    StatusCodeClass:
+      type: string
+      enum:
+        - 1xx
+        - 2xx
+        - 3xx
+        - 4xx
+        - 5xx
+
+    CacheStatus:
+      type: string
+      enum:
+        - hit
+        - miss
+        - pass
+        - expired
+        - stale
+        - updating
+        - revalidated
+
+
+paths:
+  /reports/isp/aggregation:
+    get:
+      tags:
+        - report
+      description: "Produces an aggregation report ... TBD"
+      operationId: "getIspAggregation"
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - in: query
+          name: to
+          schema:
+            type: integer
+            format: int64
+          required: false
+        - in: query
+          name: intervalSize
+          schema:
+            type: integer
+          required: true
+          description: >
+            The size of the aggregation interval. Is correlated with the the intervalUnit parameter
+        - in: query
+          name: intervalUnit
+          required: true
+          schema:
+            $ref: '#/components/schemas/IntervalUnit'
+
+        - in: query
+          name: cps
+          schema:
+            type: array
+            items:
+              type: string
+          description: >
+            Content publishers (CPs) to filter by. If not defined - the report will include all the user's allowed CPs.
+
+        - in: query
+          name: hosts
+          schema:
+            type: array
+            items:
+              type: string
+          description: >
+            `host` names to filter by. If not defined - the report will include all the user's allowed Hosts.
+
+        - in: query
+          name: isps
+          schema:
+            type: array
+            items:
+              type: string
+          description: >
+            ISPs to filter by (based on the network ID). If not defined - the report will include all the user's allowed ISPs.            
+
+        - in: query
+          name: metrics
+          description: The metrics to retrieve.
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Metrics'
+          required: true
+
+        - in: query
+          name: groupBy
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/GroupBy'
+          required: false
+
+        - in: query
+          name: trafficLayers
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/TrafficLayer'
+          required: true
+          description: The Traffic Layers of the CDN to include in the report.
+
+        - in: query
+          name: protocols
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Protocol'
+          required: false
+          description: The Protocols used in the requests to include in the report. If not defined - the report will include data of all protocols
+
+        - in: query
+          name: httpVersions
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/HttpVersion'
+          required: false
+          description: The HTTP versions to include in the report. If not defined - the report will include data of all versions.
+
+        - in: query
+          name: serviceTypes
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ServiceType'
+          required: false
+          description: The types of services to include in the report. If not defined - the report will include data of all services.
+
+        - in: query
+          name: cdnService
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CdnService'
+          required: false
+          description: The types of CDN services to include in the report. If not defined - the report will include data of all types.
+
+        - in: query
+          name: statusCodeClasses
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/StatusCodeClass'
+          required: false
+          description: The classes of status codes to include in the report. If not defined - the report will include data of all classes.
+
+        - in: query
+          name: statusCodes
+          schema:
+            type: array
+            items:
+              type: integer
+              minimum: 100
+              maximum: 699
+          description: >
+            List of HTTP Status Codes to include in the report. If not defined - the report will include data of all status codes.
+
+        - in: query
+          name: cacheStatuses
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CacheStatus'
+          required: false
+          description: The cache statuses to include in the report. If not defined - the report will include data of all cache statuses.
+
+        - in: query
+          name: contentTypes
+          schema:
+            type: array
+            items:
+              type: string
+          description: >
+            List of `Content Type`s to include in the report. If not defined - the report will include data of all `Content Type`s.
+
+        - in: query
+          name: top
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+          description: >
+            The number of top elements to retrieve.            
+
+        - in: query
+          name: includeTimeSeries
+          schema:
+            type: boolean
+            default: false
+          description: >
+            Indicates whether to return the time series per group by value.  
+
+        - in: query
+          name: count
+          schema:
+            type: boolean
+            default: false
+          description: >
+            Indicates whether to also return the overall count of elements.                
+
+        #        - in: query
+        #          name: includeAbortedTransactions
+        #          schema:
+        #            type: boolean
+        #            default: false
+        #          description: >
+        #            Indicates whether to include aborted transactions (StatusCode = 499) in the report.
+        #
+        #        - in: query
+        #          name: hostAsReportingName
+        #          schema:
+        #            type: boolean
+        #            default: false
+        #          description: >
+        #            TBD - hostAsReportingName
+        #
+        #        - in: query
+        #          name: useNetworkId
+        #          schema:
+        #            type: boolean
+        #            default: false
+        #          description: >
+        #            TBD - useNetworkId
+
+        - in: query
+          name: verbose
+          schema:
+            type: boolean
+            default: false
+          description: >
+            Indicates whether to return the input parameters in the response.            
+
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeSeriesResponse'
+
+
